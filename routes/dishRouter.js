@@ -126,4 +126,94 @@ dishRouter.route('/:dishId')
 })
 
 
+dishRouter.route('/:dishId/comments')
+.get((req, res, next)=>{
+    // res.end("Will send all comments")
+    Dishes.findById(req.params.dishId)
+    .then( ( dish) =>{
+        if(dish != null){
+            // console.log(dish)
+            res.statusCode=200
+            res.setHeader('Content-Type', 'application/json')
+            res.json(dish.comments)
+        }
+        else{
+            // console.log("Else  part")
+            err = new Error("Dish with ID : " +req.params.dishId + " not found :)")
+            err.status=404
+            return next(err);
+        }
+    }, (err) => {
+        // console.log("Err  part")
+        console.log(err)
+        next(err)
+    })
+    .catch( (err) => {
+        // console.log("Catch  part")
+        next(err)
+    })
+})
+
+.post((req, res, next)=>{
+    // res.end("Will add comment ")
+    Dishes.findById(req.params.dishId)
+    .then( ( dish) =>{
+        if(dish != null){
+            dish.comments.push(req.body)
+            dish.save()
+            .then( (dish) => {
+                res.statusCode=200
+                res.setHeader('Content-Type', 'application/json')
+                res.json(dish)
+            }, (err) => {
+                next(err)
+            })
+        }
+        else{
+            err = new Error("Dish with ID : " +req.params.dishId + " not found :)")
+            err.status=404
+            return next(err);
+        }
+    }, (err) => {
+        next(err)
+    })
+    .catch( (err) => {
+        next(err)
+    })
+})
+
+.put((req, res, next)=>{
+    res.statusCode=403
+    res.end("PUT OPERATION NOT SUPPORTED :( ")
+})
+
+.delete((req, res, next)=>{
+    // res.end("All dishes will be deleted")
+    Dishes.findById(req.params.dishId)
+    .then( ( dish) =>{
+        if (dish != null) {
+            for (var i = (dish.comments.length -1); i >= 0; i--) {
+                dish.comments.id(dish.comments[i]._id).remove();
+            }
+            dish.save()
+            .then((dish) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(dish);                
+            }, (err) => next(err));
+        }
+        else{
+            err = new Error("Dish with ID : " +req.params.dishId + " not found :)")
+            err.status=404
+            return next(err);
+        }
+    }, (err) => {
+        next(err)
+    })
+    .catch( (err) => {
+        next(err)
+    })
+})
+
+
 module.exports = dishRouter;
