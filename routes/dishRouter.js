@@ -218,7 +218,6 @@ dishRouter.route('/:dishId/comments')
 
 dishRouter.route('/:dishId/comments/:commentId')
 .get((req, res, next)=>{
-    // res.end("Will send comment with dishId " + req.params.dishId+ " and commentID "+ req.params.commentId)
     Dishes.findById(req.params.dishId)
     .then( ( dish) =>{
         if(dish != null && dish.comments.id(req.params.commentId) != null){
@@ -237,12 +236,10 @@ dishRouter.route('/:dishId/comments/:commentId')
             return next(err);
         }
     }, (err) => {
-        // console.log("Err  part")
         console.log(err)
         next(err)
     })
     .catch( (err) => {
-        // console.log("Catch  part")
         next(err)
     })
 })

@@ -33,6 +33,9 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+app.use(auth);                //No access to following middleware before authorization.
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
@@ -57,4 +60,32 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+function auth(req, res, next){
+	console.log("Authentication Middleware");
+	console.log(req.headers);
+	
+	var authHeader = req.headers.authorization;
+	if(!authHeader){
+		var err=new Error("You are not authenticated!");
+		res.setHeader('WWW-Authenticate', 'Basic');
+		err.status=401;
+		next(err);
+		
+	}
+	var auth = new Buffer(authHeader.split(' ')[1],'base64').toString().split(':');
+	var username = auth[0];
+	var password = auth[1];
+
+	if(username==='admin' && password==='password'){
+		next();
+		console.log("Authorized");
+	}
+	else{
+		console.log("Error: Unauthorized");
+		var err=new Error("You are not authenticated!");
+		res.setHeader('WWW-Authenticate', 'Basic');
+		err.status=401;
+		next(err);
+	}
+}
 module.exports = app;
