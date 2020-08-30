@@ -2,8 +2,9 @@ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
+var session = require('express-session');
+var fileStore = require('session-file-store')(session);
 var logger = require('morgan');
-
 const mongoose = require('mongoose')
 
 var indexRouter = require('./routes/index');
@@ -31,7 +32,14 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser('12345-67890-98765'));
+// app.use(cookieParser('12345-67890-98765'));
+app.use(session({
+	name:'session-id',
+	secret:'12345-67890-98765',
+	saveUninitialized:false,
+	resave:false,
+	store:new fileStore()
+}));
 
 app.use(auth);                //No access to following middleware before authorization.
 
@@ -61,23 +69,22 @@ app.use(function(err, req, res, next) {
 
 function auth(req, res, next){
 	console.log("Authentication Middleware");
-	console.log(req.signedCookies.user);
+	console.log(req.session.user);
 
-	if(!req.signedCookies.user){
+	if(!req.session.user){
 		var authHeader = req.headers.authorization;
 		if(!authHeader){
 			var err=new Error("You are not authenticated!");
 			res.setHeader('WWW-Authenticate', 'Basic');
 			err.status=401;
 			next(err);
-			
 		}
 		var auth = new Buffer(authHeader.split(' ')[1],'base64').toString().split(':');
 		var username = auth[0];
 		var password = auth[1];
 
 		if(username==='admin' && password==='password'){
-			res.cookie('user', 'admin', { signed:true });
+			req.session.user='admin';
 			next();
 			console.log("Authorized");
 		}
@@ -90,7 +97,7 @@ function auth(req, res, next){
 		}
 	}
 	else{
-		if(req.signedCookies.user==='admin'){
+		if(req.session.user==='admin'){
 			next();
 		}
 		else{
